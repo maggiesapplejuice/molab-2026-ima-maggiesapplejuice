@@ -1,7 +1,5 @@
 import Foundation
 
-// this is a "multi-line string" - the """ lets you write text
-// across several lines instead of just one
 let apple = """
      (
     /
