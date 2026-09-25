@@ -1,18 +1,28 @@
 # molar-2026-ima-maggiesapplejuice
 
+week 3 
+
+Continued with 100 Days of SwiftUI, Days 15-21 — https://www.hackingwithswift.com/100/swiftui
+Time spent: 7 hours
+
+Part 2 
+Apple juice tabs 
+
+Issues/errors: Nothing much, getting used to swiftui 
+Time spent: 6 hours
 
 Week 2
 
 Continued with 100 Days of SwiftUI, Days 8–14 — https://www.hackingwithswift.com/100/swiftui
 
 Day	Topic	Hours	Issues / errors
-8	Default values, throwing functions, and checkpoint 4	1	
-9	Closures, passing functions into functions, and checkpoint 5	1	
-10	Structs, computed properties, and property observers	1	
-11	Access control, static properties and methods, and checkpoint 6	1	
-12	Classes, inheritance, and checkpoint 7	1	
-13	Protocols, extensions, and checkpoint 8	1	
-14	Optionals, nil coalescing, and checkpoint 9	1	
+8	Default values, throwing functions, and checkpoint 
+9	Closures, passing functions into functions, and checkpoint
+10	Structs, computed properties, and property observers	
+11	Access control, static properties and methods, and checkpoint
+12	Classes, inheritance, and checkpoint
+13	Protocols, extensions, and checkpoint
+14	Optionals, nil coalescing, and checkpoint
 Total hours: 7
 
 Part 2 — Text art playground
