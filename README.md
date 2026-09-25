@@ -1,4 +1,4 @@
-# molar-2026-ima-maggiesapplejuice
+# molab-2026-ima-maggiesapplejuice
 
 week 3 
 
