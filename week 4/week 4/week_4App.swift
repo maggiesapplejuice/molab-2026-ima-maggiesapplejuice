@@ -1,14 +1,14 @@
 //
-//  Artermis_V2App.swift
-//  Artermis V2
+//  week_4App.swift
+//  week 4
 //
-//  Created by Maggie Lu on 9/18/26.
+//  Created by Maggie Lu on 10/1/26.
 //
 
 import SwiftUI
 
 @main
-struct Artermis_V2App: App {
+struct week_4App: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
