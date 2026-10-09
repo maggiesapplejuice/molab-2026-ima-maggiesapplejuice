@@ -1,4 +1,20 @@
 # molab-2026-ima-maggiesapplejuice
+week 4 
+
+Continued with 100 Days of SwiftUI, Days 22–28 — https://www.hackingwithswift.com/100/swiftui
+Topics: finished Guess the Flag, views and modifiers, the Rock Paper Scissors milestone, and started BetterRest
+Time spent: 10 hours
+
+Part 2 — HW
+
+week 4/ContentView.swift — a two-tab emergency app built in SwiftUI.
+- SOS tab: a big red button you have to hold for 3 seconds. It counts down 3, 2, 1, and if you let go early it cancels. After 3 seconds it opens a red alert screen with buttons to call or text your emergency contact. The text opens Messages with your alert message already filled in. The screen also shows your blood type and allergies.
+- Profile tab: a form for your name, photo, emergency contact, medical info (blood type, allergies, medications), and a custom alert message. Everything is saved on the phone with @AppStorage, so the SOS tab can use it right away.
+
+Concepts used: TabView, @AppStorage, @State, DragGesture, Task for the countdown timer, PhotosPicker, Link with tel: and sms: URLs
+
+Issues/errors: The hardest part was getting the hold-to-count-down button to work. onLongPressGesture didn't let me show a countdown, so I used DragGesture with minimumDistance 0 to tell when the finger went down and came up, and cancelled the timer Task if they let go early. I also had to strip spaces and dashes out of the phone number and percent-encode the message so the call and text links would work.
+Time spent: 8 hours
 
 week 3 
 
