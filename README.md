@@ -1,4 +1,26 @@
 # molab-2026-ima-maggiesapplejuice
+week 5
+
+Continued with 100 Days of SwiftUI, Days 29–35 — https://www.hackingwithswift.com/100/swiftui
+Topics: Word Scramble (List, loading files from the bundle, UITextChecker), animations
+Time spent: 10 hours
+
+Part 2 — HW
+
+week 5/ContentView.swift — updated my two-tab SOS app from week 4.
+- Added haptics: a small buzz on each count (3, 2, 1) and a strong warning buzz when the alert screen opens.
+- Added a "Call 911" button that always shows, even if no emergency contact is saved.
+- The text message is now signed with your name from the Profile tab.
+- Medications now show on the alert screen (they were saved before but never displayed).
+- Made one bigButton() helper for the white buttons instead of copying the same styling three times.
+- Switched from a string (screen = "home"/"alert") to a Bool (showAlert) to switch screens.
+- The profile photo is now shrunk to 300 px wide before saving.
+
+Concepts used: .sensoryFeedback, helper functions that return views, computed properties, CharacterSet / percent-encoding, UIGraphicsImageRenderer
+
+Issues/errors: The text message was getting cut off if it had symbols like & or ? in it, because those have special meanings in a URL. I fixed it by removing them from the allowed characters so they get encoded too. Xcode also warned that .cornerRadius is deprecated, so I switched to .clipShape(.rect(cornerRadius:)). I also realized saving a full-size photo in @AppStorage was a bad idea since it's meant for small data, so I resized it first. Finally, the call button could break if the phone number had no digits in it, so I made it check phoneDigits instead of contactPhone.
+Time spent: 12 hours
+
 week 4 
 
 Continued with 100 Days of SwiftUI, Days 22–28 — https://www.hackingwithswift.com/100/swiftui
