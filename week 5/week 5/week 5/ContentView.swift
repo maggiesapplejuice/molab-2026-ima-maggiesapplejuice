@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import PhotosUI
 
-// The app has 2 tabs: the SOS button and the profile
+// 2 tabs: the SOS button and the profile
 struct ContentView: View {
     var body: some View {
         TabView {
@@ -19,26 +19,33 @@ struct ContentView: View {
 // PAGE 1: the SOS button
 struct HomeView: View {
     // These come from the Profile page (@AppStorage saves them on the phone)
+    @AppStorage("name") var name = ""                       // NEW (Week 05): used to sign the text
     @AppStorage("contactName") var contactName = ""
     @AppStorage("contactPhone") var contactPhone = ""
     @AppStorage("alertMessage") var alertMessage = "I need help!"
     @AppStorage("bloodType") var bloodType = ""
     @AppStorage("allergies") var allergies = ""
+    @AppStorage("medications") var medications = ""         // NEW (Week 05): now shown on alert screen
 
-    @State var screen = "home"      // "home" or "alert"
+    @State var showAlert = false        // NEW (Week 05): was  @State var screen = "home"
     @State var isHolding = false
     @State var holdCount = 3
     @State var holdTimer: Task<Void, Never>?
 
     var body: some View {
-        if screen == "home" {
-            homeScreen
-        } else {
-            alertScreen
+        // NEW (Week 05): wrapped in a Group so haptics can be added
+        Group {
+            if showAlert {
+                alertScreen
+            } else {
+                homeScreen
+            }
         }
+        // NEW (Week 05): strong buzz when the alert screen opens
+        .sensoryFeedback(.warning, trigger: showAlert) { _, newValue in newValue }
     }
 
-    // ---------- Screen 1: the big red button ----------
+    //  Screen 1: the big red button
     var homeScreen: some View {
         VStack(spacing: 40) {
             Text("Hold for 3 seconds")
@@ -62,6 +69,8 @@ struct HomeView: View {
             }
             .scaleEffect(isHolding ? 0.9 : 1)
             .animation(.easeInOut, value: isHolding)
+            // NEW (Week 05): small buzz on each count: 3, 2, 1
+            .sensoryFeedback(.impact, trigger: holdCount)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in
@@ -84,7 +93,7 @@ struct HomeView: View {
         }
     }
 
-    // ---------- Screen 2: get help ----------
+    //Screen 2: get help
     var alertScreen: some View {
         VStack(spacing: 20) {
             Text("🚨")
@@ -93,29 +102,22 @@ struct HomeView: View {
                 .font(.largeTitle)
                 .bold()
 
-            if contactPhone.isEmpty {
+            // NEW (Week 05): always show 911, even if there is no contact saved
+            Link(destination: URL(string: "tel:911")!) {
+                bigButton("Call 911")
+            }
+
+            // NEW (Week 05): checks phoneDigits instead of contactPhone,
+            // so a number with no digits in it doesn't make a broken button
+            if phoneDigits.isEmpty {
                 Text("No emergency contact saved. Add one in Profile.")
             } else {
                 Link(destination: URL(string: "tel:\(phoneDigits)")!) {
-                    Text("📞 Call \(contactName)")
-                        .font(.title2)
-                        .bold()
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(.white)
-                        .cornerRadius(15)
+                    bigButton(" Call \(contactName)")      // NEW (Week 05): uses bigButton
                 }
 
                 Link(destination: textURL) {
-                    Text("💬 Text \(contactName)")
-                        .font(.title2)
-                        .bold()
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(.white)
-                        .cornerRadius(15)
+                    bigButton(" Text \(contactName)")      // NEW (Week 05): uses bigButton
                 }
             }
 
@@ -125,9 +127,13 @@ struct HomeView: View {
             if !allergies.isEmpty {
                 Text("Allergies: \(allergies)")
             }
+            // NEW (Week 05): medications were saved in Profile but never shown
+            if !medications.isEmpty {
+                Text("Medications: \(medications)")
+            }
 
             Button("I'm safe") {
-                screen = "home"
+                showAlert = false               // NEW (Week 05): was  screen = "home"
             }
             .font(.title3)
             .bold()
@@ -139,7 +145,20 @@ struct HomeView: View {
         .background(.red)
     }
 
-    // ---------- Functions ----------
+    // NEW (Week 05): one helper for the white buttons instead of copying the styling.
+    // Also uses .clipShape instead of .cornerRadius (which is deprecated).
+    func bigButton(_ title: String) -> some View {
+        Text(title)
+            .font(.title2)
+            .bold()
+            .foregroundStyle(.red)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(.white)
+            .clipShape(.rect(cornerRadius: 15))
+    }
+
+    //  Functions
 
     // Count 3, 2, 1 on the button while the finger is down
     func startHolding() {
@@ -153,7 +172,7 @@ struct HomeView: View {
                 holdCount -= 1
             }
             isHolding = false
-            screen = "alert"                       // held all 3 seconds
+            showAlert = true                       // NEW (Week 05): was  screen = "alert"
         }
     }
 
@@ -167,9 +186,21 @@ struct HomeView: View {
         contactPhone.filter { $0.isNumber }
     }
 
+    // NEW (Week 05): the text message, signed with your name if you added one
+    var fullMessage: String {
+        if name.isEmpty {
+            return alertMessage
+        } else {
+            return "\(alertMessage) - \(name)"
+        }
+    }
+
     // Opens Messages with the number and the alert message filled in
     var textURL: URL {
-        let message = alertMessage.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        // NEW (Week 05): also encode & = ? + so they don't cut the message off
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&=?+")
+        let message = fullMessage.addingPercentEncoding(withAllowedCharacters: allowed) ?? ""
         return URL(string: "sms:\(phoneDigits)&body=\(message)")!
     }
 }
@@ -228,8 +259,15 @@ struct ProfileView: View {
             .onChange(of: pickedPhoto) {
                 // Load the photo the user picked and save it
                 Task {
-                    if let data = try? await pickedPhoto?.loadTransferable(type: Data.self) {
-                        photoData = data
+                    if let data = try? await pickedPhoto?.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        // NEW (Week 05): shrink the photo to 300 px wide before saving,
+                        // because @AppStorage is meant for small data
+                        let size = CGSize(width: 300, height: 300 * image.size.height / image.size.width)
+                        let small = UIGraphicsImageRenderer(size: size).image { _ in
+                            image.draw(in: CGRect(origin: .zero, size: size))
+                        }
+                        photoData = small.jpegData(compressionQuality: 0.8) ?? Data()
                     }
                 }
             }
@@ -240,3 +278,4 @@ struct ProfileView: View {
 #Preview {
     ContentView()
 }
+
