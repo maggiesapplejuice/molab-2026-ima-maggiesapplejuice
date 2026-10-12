@@ -1,6 +1,35 @@
 # molab-2026-ima-maggiesapplejuice
 
 ---
+## Week 6
+
+### Part 1: 100 Days of SwiftUI (Days 36–42)
+- **Resource:** https://www.hackingwithswift.com/100/swiftui
+- **Topics:** iExpense (`@Observable`, sheets, deleting items with `onDelete`, saving with `UserDefaults` and `Codable`) and Moonshot (loading JSON, scroll views, composing smaller views)
+- **Time spent:** 10 hours
+
+### Part 2: Homework
+**`week 6/ContentView.swift`**: added a new way of saving data to my SOS app.
+
+- You can now save **multiple emergency contacts** instead of just one. Before, I used `@AppStorage`, which can only hold single values like one name and one phone number, not a list.
+- Each contact is a `Codable` struct, and the whole list is saved as a JSON file (`contacts.json`) in the app's Documents folder, like the 06-ImageEditDemoJSON demo from class
+- Wrote generic `saveJSON` and `loadJSON` functions that work with any Codable type
+- Made a `ContactStore` class with `@Observable` and shared it with both tabs using `.environment`, so a contact added in Profile shows up on the SOS tab right away
+- Profile tab: add contacts with a button, swipe left to delete one
+- Alert screen: a Call and a Text button for every contact, inside a ScrollView so a long list still fits
+- The first time the new version runs, it moves the one contact saved by the old version into the new list, so nothing gets lost
+- Everything else (name, photo, medical info, alert message) still uses `@AppStorage`, since those are single small values
+
+**Concepts used:** `Codable`, `JSONEncoder` / `JSONDecoder`, generic functions, the Documents directory, `@Observable`, `.environment`, `ForEach` with `.onDelete`, ScrollView
+
+**Issues/errors:**
+- I was editing in VS Code at first, but it can't run iPhone apps, so I had to switch to Xcode to test.
+- When I opened my Swift file by itself in Xcode, I got "No such module 'UIKit'". That's because a loose file gets built as Mac code. I fixed it by creating a real iOS App project and putting the code inside it.
+- Then I got "Invalid redeclaration of 'ContentView'" because I pasted the code into `MyApp.swift` instead of `ContentView.swift`, so there were two ContentViews. I fixed it by putting the code in ContentView.swift and keeping MyApp.swift as just the small `@main` file that starts the app.
+
+**Plans:** let users edit a contact after adding it, and maybe add the user's location to the text message.
+
+**Time spent:** 12 hours
 
 ## Week 5
 
