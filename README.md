@@ -11,12 +11,20 @@
 ## Week 7
 
 ### Part 2: Homework
-Added three photo features to my SOS app.
+Added three photo features to my SOS app, and simplified it.
+
+**Simpler SOS:**
+- The app now has **one emergency contact** instead of a list, so there's no decision to make in an emergency. The + button disappears once you've added someone, and the **⋯** menu next to them has "Remove contact" if you want to switch to someone else. (This also replaces Week 6's swipe-to-delete, which didn't actually work because `.onDelete` only works inside a `List`.)
+- **SOS button:** instead of a countdown in seconds, a white ring fills up around the button while you hold and the text changes to "Activating SOS…". You can tell it's working at a glance, without reading numbers (`Circle().trim(from:to:)`).
+- **The alert screen only shows ways to get help.** I removed the warning icon, the "Get help now" title, the blood type / allergies / medications list and the "I'm safe" button. (Your medical info is still saved in Safety kit and used on the lock screen wallpaper.)
+- **Ending the alert:** the alert now slides up as a card (`.sheet` with `.presentationDragIndicator(.visible)`), and you swipe it down to end it, like closing any iOS sheet. I tried a "Hold to end alert" button first, but a button for *ending* the alert doesn't belong on a screen that's for getting help.
+- **Black background, red for what's urgent:** only the most urgent buttons are red: a big **Call 911** in the middle of the screen, and Call and Text for your contact. Everything else (Take photo, Choose, Send) is dark gray, so your eye goes straight to the red.
+- **Circles are held, rectangles are tapped.** I first made Call 911 a big circle like the SOS button, but it looked like you had to hold it too. Now it's a wide rectangle like the other tap buttons, and the only circle in the app is the SOS button you hold.
 
 **1. Contact photos** (`week 7/week 7/ContentView.swift`, `PhotoHelpers.swift`): when you're panicking, a face is faster to recognize than a name.
 
-- Add a photo when you create a contact, or tap the circle next to an existing contact to set or change it (`PhotosPicker`)
-- The alert screen shows each contact's face next to their Call and Text buttons. Contacts without a photo show their initials
+- Add a photo when you create the contact, or tap their circle to set or change it (`PhotosPicker`)
+- The alert screen shows their face next to the Call and Text buttons. Without a photo it shows their initials
 - Each photo is shrunk to 300 px and saved as its own JPEG in the Documents folder. `contacts.json` only stores the file name, so the JSON stays small. Older `contacts.json` files without a photo still load (`decodeIfPresent`)
 
 **2. Evidence capture** (`week 7/week 7/Evidence.swift`): a "Record what's happening" section on the alert screen.
@@ -24,15 +32,15 @@ Added three photo features to my SOS app.
 - **Take photo** opens the camera (`UIImagePickerController` wrapped in `UIViewControllerRepresentable`, like the 07-PhotoPickBlender demo). **Choose** picks up to 5 photos from the library
 - Every photo gets the time and GPS location drawn onto it with `UIGraphicsImageRenderer`, so whoever receives it sees them too. Library photos say "Added to SOS" instead of "Taken", because they might be older
 - Location comes from `CLLocationUpdate.liveUpdates()` and `CLServiceSession`, and only runs while the alert screen is open
-- **Send to contacts** opens Messages (`MFMessageComposeViewController`) with every emergency contact filled in, the photos attached, and an Apple Maps link to your location. If the phone can't send texts, it shows the normal share sheet instead
-- Photos are saved with `.completeFileProtection` (encrypted while the phone is locked). They stay in a **Saved evidence** section in Safety kit after you tap "I'm safe", where you can share or delete them
+- **Send to [contact]** opens Messages (`MFMessageComposeViewController`) with your emergency contact filled in, the photos attached, and an Apple Maps link to your location. If the phone can't send texts, it shows the normal share sheet instead
+- Photos are saved with `.completeFileProtection` (encrypted while the phone is locked). They stay in a **Saved evidence** section in Safety kit after the alert ends, where you can share or delete them
 - This only collects photos during an actual emergency, which is the privacy problem I had with the lock screen idea below
 
 **3. Lock screen wallpaper** (`week 7/week 7/LockScreenView.swift`): a **Lock screen** tab that turns one of your photos into a Medical ID lock screen wallpaper. (I built this first, then realized it puts your personal info on display 24/7, so features 1 and 2 are the main ones now.)
 
 - Pick a background photo from your library with `PhotosPicker`
 - Choose a style made with Core Image filters, like the 07-Instafilter demo: **Calm** (blur), **Noir** (black and white), **Night** (dark blue tint) and **Vivid** (vibrance + vignette). Each one darkens the photo a bit so the white text stays easy to read
-- Your name, blood type, allergies, medications and first emergency contact (from the Safety kit tab) are shown on top of the photo, placed between the lock screen clock and the flashlight/camera buttons
+- Your name, blood type, allergies, medications and emergency contact (from the Safety kit tab) are shown on top of the photo, placed between the lock screen clock and the flashlight/camera buttons
 - "Save to Photos" uses `ImageRenderer` to turn the SwiftUI view into a full-resolution image, then saves it with `PHPhotoLibrary`. It asks for **add-only** access, so the app can save photos but can never see your library
 - Then you set it as your wallpaper from the Photos app. Now a first responder can see your medical info without unlocking your phone
 - Also cleaned up the file names: `MyApp.swift` is now just the `@main` file and `ContentView.swift` has the app's views (they were swapped in Week 6)
@@ -45,7 +53,7 @@ Added three photo features to my SOS app.
 - The dark bar behind the time/location stamp came out solid gray and erased the bottom of the photo. `context.fill(rect)` on a `UIGraphicsImageRenderer` uses the `.copy` blend mode by default, which replaces pixels instead of drawing over them. Passing `blendMode: .normal` fixed it.
 - The simulator's camera opens but can't actually take a picture, and the simulator can't send texts, so those two parts need to be tested on a real iPhone.
 
-**Plans:** test the camera and Send to contacts on my iPhone, let the user choose which details show on the lock screen wallpaper, and maybe a Live Activity so the alert stays on the lock screen while it's active.
+**Plans:** test the camera and texting on my iPhone, let the user choose which details show on the lock screen wallpaper, and maybe a Live Activity so the alert stays on the lock screen while it's active.
 
 ---
 ## Week 6

@@ -79,7 +79,13 @@ final class ContactStore {
         }
     }
 
+    // Only one emergency contact. Remove the current one to add someone else.
+    var canAddContact: Bool {
+        contacts.isEmpty
+    }
+
     func add(name: String, phone: String, relationship: String, photo: UIImage?) {
+        guard canAddContact else { return }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedRelationship = relationship.trimmingCharacters(in: .whitespacesAndNewlines)
         let contact = EmergencyContact(
@@ -109,11 +115,9 @@ final class ContactStore {
         }
     }
 
-    func delete(at offsets: IndexSet) {
-        for index in offsets {
-            removePhoto(of: contacts[index])
-        }
-        contacts.remove(atOffsets: offsets)
+    func remove(_ contact: EmergencyContact) {
+        removePhoto(of: contact)
+        contacts.removeAll { $0.id == contact.id }
         save()
     }
 
@@ -154,9 +158,6 @@ struct HomeView: View {
 
     @AppStorage("name") private var name = ""
     @AppStorage("alertMessage") private var alertMessage = "I need help!"
-    @AppStorage("bloodType") private var bloodType = ""
-    @AppStorage("allergies") private var allergies = ""
-    @AppStorage("medications") private var medications = ""
 
     @State private var showAlert = false
     @State private var isHolding = false
@@ -165,27 +166,20 @@ struct HomeView: View {
     @State private var holdTimer: Task<Void, Never>?
 
     var body: some View {
-        Group {
-            if showAlert {
-                AlertScreen(
-                    contacts: store.contacts,
-                    bloodType: bloodType,
-                    allergies: allergies,
-                    medications: medications,
-                    message: fullMessage
-                ) {
-                    showAlert = false
-                }
-            } else {
-                SOSHomeScreen(
-                    needsContacts: store.contacts.isEmpty,
-                    isHolding: isHolding,
-                    holdCount: holdCount,
-                    holdTimeRemaining: holdTimeRemaining,
-                    startHolding: startHolding,
-                    stopHolding: stopHolding
-                )
-            }
+        SOSHomeScreen(
+            needsContacts: store.contacts.isEmpty,
+            isHolding: isHolding,
+            holdCount: holdCount,
+            holdTimeRemaining: holdTimeRemaining,
+            startHolding: startHolding,
+            stopHolding: stopHolding
+        )
+        // The alert slides up as a card. Swiping it down ends the alert, so the
+        // screen itself only has ways to get help on it.
+        .sheet(isPresented: $showAlert) {
+            AlertScreen(contacts: store.contacts, message: fullMessage)
+                .presentationDragIndicator(.visible)
+                .presentationBackground(.black)
         }
         .sensoryFeedback(.warning, trigger: showAlert) { _, value in value }
     }
@@ -255,6 +249,13 @@ struct SOSHomeScreen: View {
                     Circle()
                         .stroke(.red.opacity(0.18), lineWidth: 24)
                         .frame(width: 270, height: 270)
+                    // Fills up clockwise while you hold, so you can see at a glance
+                    // that SOS is activating without reading any numbers.
+                    Circle()
+                        .trim(from: 0, to: isHolding ? 1 - holdTimeRemaining / 3 : 0)
+                        .stroke(.white, style: StrokeStyle(lineWidth: 24, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 270, height: 270)
                     Circle()
                         .fill(
                             LinearGradient(colors: [.red, Color(red: 0.72, green: 0.03, blue: 0.12)], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -264,14 +265,8 @@ struct SOSHomeScreen: View {
                     VStack(spacing: 4) {
                         Image(systemName: isHolding ? "hand.tap.fill" : "exclamationmark.shield.fill")
                             .font(.title)
-                        if isHolding {
-                            Text(holdTimeRemaining, format: .number.precision(.fractionLength(3)))
-                                .font(.system(size: 46, weight: .black, design: .rounded))
-                                .contentTransition(.numericText())
-                        } else {
-                            Text("SOS")
-                                .font(.system(size: 54, weight: .black, design: .rounded))
-                        }
+                        Text("SOS")
+                            .font(.system(size: 54, weight: .black, design: .rounded))
                     }
                     .foregroundStyle(.white)
                 }
@@ -288,8 +283,14 @@ struct SOSHomeScreen: View {
                 .accessibilityLabel("Emergency SOS")
                 .accessibilityHint("Press and hold for three seconds to open emergency actions.")
 
+                Text(isHolding ? "Activating SOS…" : "Hold to activate")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white.opacity(isHolding ? 1 : 0.6))
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.18), value: isHolding)
+
                 if needsContacts {
-                    Text("Add contacts in Safety kit")
+                    Text("Add your emergency contact in Safety kit")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white.opacity(0.72))
                 }
@@ -307,70 +308,85 @@ struct SOSHomeScreen: View {
 
 struct AlertScreen: View {
     let contacts: [EmergencyContact]
-    let bloodType: String
-    let allergies: String
-    let medications: String
     let message: String
-    let dismiss: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.yellow)
-                Text("Get help now")
-                    .font(.largeTitle.bold())
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 18) {
+                    contactCards
 
-                Link(destination: URL(string: "tel:911")!) {
-                    EmergencyActionLabel(title: "Call 911", symbol: "phone.fill", tint: .red)
+                    // The spacers keep Call 911 in the middle of the screen.
+                    Spacer(minLength: 12)
+                    Call911Button()
+                    Spacer(minLength: 12)
+
+                    EvidenceCaptureSection(contacts: contacts, message: message)
                 }
-
-                ForEach(contacts) { contact in
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing: 12) {
-                            ContactAvatar(contact: contact, size: 56)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(contact.name)
-                                    .font(.headline)
-                                Text(contact.relationship)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white.opacity(0.7))
-                            }
-                        }
-                        HStack {
-                            Link(destination: URL(string: "tel:\(contact.digits)")!) {
-                                EmergencyActionLabel(title: "Call", symbol: "phone.fill", tint: .white)
-                            }
-                            Link(destination: textURL(to: contact.digits, message: message)) {
-                                EmergencyActionLabel(title: "Text", symbol: "message.fill", tint: .white)
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                }
-
-                EvidenceCaptureSection(contacts: contacts, message: message)
-
-                MedicalDetails(bloodType: bloodType, allergies: allergies, medications: medications)
-
-                Button("I'm safe", action: dismiss)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.white)
-                    .foregroundStyle(.red)
-                    .padding(.top, 8)
+                .padding(24)
+                // At least as tall as the screen, so the spacers have room to center it.
+                .frame(minHeight: geometry.size.height)
             }
-            .padding(24)
         }
         .foregroundStyle(.white)
-        .background(.red.gradient)
+        .background(Color.black)
+    }
+
+    private var contactCards: some View {
+        ForEach(contacts) { contact in
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 12) {
+                    ContactAvatar(contact: contact, size: 56)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(contact.name)
+                            .font(.headline)
+                        Text(contact.relationship)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                HStack {
+                    Link(destination: URL(string: "tel:\(contact.digits)")!) {
+                        EmergencyActionLabel(title: "Call", symbol: "phone.fill", tint: .urgentAction)
+                    }
+                    Link(destination: textURL(to: contact.digits, message: message)) {
+                        EmergencyActionLabel(title: "Text", symbol: "message.fill", tint: .urgentAction)
+                    }
+                }
+            }
+            .padding()
+            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
     }
 
     private func textURL(to digits: String, message: String) -> URL {
         let encodedMessage = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         return URL(string: "sms:\(digits)&body=\(encodedMessage)")!
     }
+}
+
+// A wide button like Call and Text, just bigger. It's a rectangle on purpose:
+// in this app circles are held (SOS) and rectangles are tapped.
+struct Call911Button: View {
+    var body: some View {
+        Link(destination: URL(string: "tel:911")!) {
+            Label("Call 911", systemImage: "phone.fill")
+                .font(.system(size: 34, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
+                .background(Color.urgentAction, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .shadow(color: Color.urgentAction.opacity(0.5), radius: 18)
+        }
+        .accessibilityLabel("Call 911")
+    }
+}
+
+// On the black alert screen, red buttons are the urgent ones (calling and
+// texting for help). Everything else is dark gray so the red stands out.
+extension Color {
+    static let urgentAction = Color.red
+    static let secondaryAction = Color(white: 0.2)
 }
 
 struct EmergencyActionLabel: View {
@@ -381,25 +397,10 @@ struct EmergencyActionLabel: View {
     var body: some View {
         Label(title, systemImage: symbol)
             .font(.headline)
-            .foregroundStyle(tint == .white ? .red : .white)
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(tint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-}
-
-struct MedicalDetails: View {
-    let bloodType: String
-    let allergies: String
-    let medications: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if !bloodType.isEmpty { Text("Blood type: \(bloodType)") }
-            if !allergies.isEmpty { Text("Allergies: \(allergies)") }
-            if !medications.isEmpty { Text("Medications: \(medications)") }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -422,10 +423,10 @@ struct ProfileView: View {
                 VStack(spacing: 22) {
                     SafetyProgressCard(completedSteps: completedSteps)
                     ProfileIdentityCard(name: $name, photoData: photoData, pickedPhoto: $pickedPhoto)
-                    ContactsSection(contacts: store.contacts) {
+                    ContactsSection(contacts: store.contacts, canAdd: store.canAddContact) {
                         isShowingContactSheet = true
-                    } onDelete: { offsets in
-                        store.delete(at: offsets)
+                    } onRemove: { contact in
+                        store.remove(contact)
                     }
                     SavedEvidenceSection()
                     MedicalSection(
@@ -539,33 +540,37 @@ struct ProfileIdentityCard: View {
 
 struct ContactsSection: View {
     let contacts: [EmergencyContact]
+    let canAdd: Bool
     let addContact: () -> Void
-    let onDelete: (IndexSet) -> Void
+    let onRemove: (EmergencyContact) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Your safety circle")
+                    Text("Your emergency contact")
                         .font(.headline)
-                    Text("People who can help quickly.")
+                    Text("The person to call and text in an emergency.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button(action: addContact) {
-                    Image(systemName: "plus")
-                        .font(.headline)
-                        .padding(10)
-                        .background(.teal, in: Circle())
-                        .foregroundStyle(.white)
+                // Only one contact, so the + button goes away once it's added.
+                if canAdd {
+                    Button(action: addContact) {
+                        Image(systemName: "plus")
+                            .font(.headline)
+                            .padding(10)
+                            .background(.teal, in: Circle())
+                            .foregroundStyle(.white)
+                    }
+                    .accessibilityLabel("Add emergency contact")
                 }
-                .accessibilityLabel("Add emergency contact")
             }
 
             if contacts.isEmpty {
                 Button(action: addContact) {
-                    Label("Add your first contact", systemImage: "person.badge.plus")
+                    Label("Add your emergency contact", systemImage: "person.badge.plus")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -574,9 +579,10 @@ struct ContactsSection: View {
                 .tint(.teal)
             } else {
                 ForEach(contacts) { contact in
-                    ContactRow(contact: contact)
+                    ContactRow(contact: contact) {
+                        onRemove(contact)
+                    }
                 }
-                .onDelete(perform: onDelete)
             }
         }
         .padding(18)
@@ -587,6 +593,7 @@ struct ContactsSection: View {
 struct ContactRow: View {
     @Environment(ContactStore.self) private var store
     let contact: EmergencyContact
+    let onRemove: () -> Void
 
     @State private var pickedPhoto: PhotosPickerItem?
 
@@ -622,6 +629,15 @@ struct ContactRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            // Opening the menu first means one stray tap can't remove the contact.
+            Menu {
+                Button("Remove contact", systemImage: "trash", role: .destructive, action: onRemove)
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("Options for \(contact.name)")
         }
         .padding(.vertical, 4)
     }
@@ -692,7 +708,7 @@ struct AddContactView: View {
                     Text(photo == nil ? "Tap to add their photo, so you can spot them fast." : "Looking good.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("Add to your safety circle")
+                    Text("Add your emergency contact")
                         .font(.title2.bold())
                     Text("Each detail helps you reach the right person faster.")
                         .foregroundStyle(.secondary)

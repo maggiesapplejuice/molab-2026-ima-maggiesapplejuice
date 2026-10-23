@@ -192,11 +192,11 @@ struct EvidenceCaptureSection: View {
                     Button {
                         showingCamera = true
                     } label: {
-                        EmergencyActionLabel(title: "Take photo", symbol: "camera.fill", tint: .white)
+                        EmergencyActionLabel(title: "Take photo", symbol: "camera.fill", tint: .secondaryAction)
                     }
                 }
                 PhotosPicker(selection: $pickedPhotos, maxSelectionCount: 5, matching: .images) {
-                    EmergencyActionLabel(title: "Choose", symbol: "photo.on.rectangle", tint: .white)
+                    EmergencyActionLabel(title: "Choose", symbol: "photo.on.rectangle", tint: .secondaryAction)
                 }
             }
 
@@ -214,7 +214,7 @@ struct EvidenceCaptureSection: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .onAppear { location.start() }
         .onDisappear { location.stop() }
         .onChange(of: pickedPhotos) {
@@ -239,18 +239,19 @@ struct EvidenceCaptureSection: View {
 
     @ViewBuilder
     private var sendButton: some View {
-        let title = items.count == 1 ? "Send photo to contacts" : "Send \(items.count) photos to contacts"
-        // Messages with the photos attached and every contact filled in. Phones that
+        let recipient = contacts.first?.name ?? "contact"
+        let title = items.count == 1 ? "Send photo to \(recipient)" : "Send \(items.count) photos to \(recipient)"
+        // Messages with the photos attached and the contact filled in. Phones that
         // can't send texts (like the simulator) get the regular share sheet instead.
         if MFMessageComposeViewController.canSendText() && !contacts.isEmpty {
             Button {
                 showingComposer = true
             } label: {
-                EmergencyActionLabel(title: title, symbol: "paperplane.fill", tint: .black)
+                EmergencyActionLabel(title: title, symbol: "paperplane.fill", tint: .secondaryAction)
             }
         } else {
             ShareLink(items: items.map(\.url), message: Text(messageBody)) {
-                EmergencyActionLabel(title: items.count == 1 ? "Share photo" : "Share \(items.count) photos", symbol: "square.and.arrow.up", tint: .black)
+                EmergencyActionLabel(title: items.count == 1 ? "Share photo" : "Share \(items.count) photos", symbol: "square.and.arrow.up", tint: .secondaryAction)
             }
         }
     }
