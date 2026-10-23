@@ -10,43 +10,41 @@
 ---
 ## Week 7
 
+### Part 1: 100 Days of SwiftUI (Days 43–49)
+- **Resource:** https://www.hackingwithswift.com/100/swiftui
+- **Topics:** Drawing (shapes, paths, `Canvas`-style drawing)
+- **Time spent:** 10 hours
+
 ### Part 2: Homework
-Added two photo features to my SOS app, and simplified it.
+**`week 7/week 7/Evidence.swift`, `ContentView.swift`, `PhotoHelpers.swift`**: added photos to my SOS app and made the alert screen simpler.
 
-**Simpler SOS:**
-- The app now has **one emergency contact** instead of a list, so there's no decision to make in an emergency. The + button disappears once you've added someone, and the **⋯** menu next to them has "Remove contact" if you want to switch to someone else. (This also replaces Week 6's swipe-to-delete, which didn't actually work because `.onDelete` only works inside a `List`.)
-- **SOS button:** instead of a countdown in seconds, a white ring fills up around the button while you hold and the text changes to "Activating SOS…". You can tell it's working at a glance, without reading numbers (`Circle().trim(from:to:)`).
-- **The alert screen only shows ways to get help.** I removed the warning icon, the "Get help now" title, the blood type / allergies / medications list and the "I'm safe" button. (Your medical info is still saved in Safety kit.)
-- **Ending the alert:** the alert now slides up as a card (`.sheet` with `.presentationDragIndicator(.visible)`), and you swipe it down to end it, like closing any iOS sheet. I tried a "Hold to end alert" button first, but a button for *ending* the alert doesn't belong on a screen that's for getting help.
-- **Black background, red for what's urgent:** only the most urgent buttons are red: a big **Call 911** in the middle of the screen, and Call and Text for your contact. Everything else (Take photo, Choose, Send) is dark gray, so your eye goes straight to the red.
-- **Circles are held, rectangles are tapped.** I first made Call 911 a big circle like the SOS button, but it looked like you had to hold it too. Now it's a wide rectangle like the other tap buttons, and the only circle in the app is the SOS button you hold.
+- **Contact photos:** you can add a photo to your emergency contact with `PhotosPicker`, either when you add them or by tapping their circle later. When you're panicking, a face is faster to recognize than a name. Without a photo it shows their initials.
+- Each contact photo is shrunk to 300 px and saved as its own JPEG in the Documents folder, and `contacts.json` only keeps the file name. Every new photo gets a new random file name, so SwiftUI notices the change and redraws. Older contacts without a photo still load because of `decodeIfPresent`.
+- **Evidence photos:** the alert screen has a "Record what's happening" section where you can take a photo with the camera or choose up to 5 from your library.
+- SwiftUI doesn't have a camera view, so I wrapped UIKit's `UIImagePickerController` with `UIViewControllerRepresentable`, like the 07-PhotoPickBlender demo. The Coordinator passes the photo back to SwiftUI.
+- Every evidence photo gets the time and GPS location drawn onto it with `UIGraphicsImageRenderer` (a see-through black bar with white text), so whoever receives it can see when and where it was taken. Library photos say "Added to SOS" instead of "Taken" because they might be older.
+- The location comes from `CLLocationUpdate.liveUpdates()` with a `CLServiceSession`. It starts when the alert opens and stops when it closes, so it isn't tracking you the rest of the time.
+- "Send to [contact]" opens Messages (`MFMessageComposeViewController`) with my contact, my SOS message, an Apple Maps link to my location, and the photos already filled in. If the phone can't send texts, it shows the share sheet instead.
+- Evidence photos are saved with `.completeFileProtection` so they're encrypted while the phone is locked. They stay in a new "Saved evidence" section in Safety kit after the alert ends, where you can long-press to share or delete them.
+- Made a `resizedImage` helper that shrinks photos and fixes ones taken sideways. Both contact photos and evidence photos use it.
+- **One emergency contact:** went back to just one contact so there's no decision to make in an emergency. The + button hides once you've added someone, and the ⋯ menu next to them removes them. This also replaces the Week 6 swipe-to-delete, which didn't actually work because `.onDelete` only works inside a `List`.
+- **SOS button:** replaced the 3, 2, 1 countdown with a white ring that fills up while you hold (`Circle().trim(from:to:)`) and text that says "Activating SOS…", so you can tell it's working at a glance.
+- **Alert screen:** it now slides up as a card (`.sheet`) that you swipe down to end, instead of an "I'm safe" button. I took off the warning icon, the "Get help now" title and the medical info, so it only has ways to get help.
+- The alert screen is black, and only the most urgent buttons are red: a big Call 911 in the middle of the screen, and Call and Text for my contact. Everything else is dark gray, so your eye goes straight to the red.
+- My first idea this week was a lock screen wallpaper with your medical info on it, made with Core Image filters like the 07-Instafilter demo. I built it, but then removed it because it would show your name, health details and a contact's number to anyone who sees your phone, all the time. Evidence photos only happen during a real emergency.
 
-**1. Contact photos** (`week 7/week 7/ContentView.swift`, `PhotoHelpers.swift`): when you're panicking, a face is faster to recognize than a name.
-
-- Add a photo when you create the contact, or tap their circle to set or change it (`PhotosPicker`)
-- The alert screen shows their face next to the Call and Text buttons. Without a photo it shows their initials
-- Each photo is shrunk to 300 px and saved as its own JPEG in the Documents folder. `contacts.json` only stores the file name, so the JSON stays small. Older `contacts.json` files without a photo still load (`decodeIfPresent`)
-
-**2. Evidence capture** (`week 7/week 7/Evidence.swift`): a "Record what's happening" section on the alert screen.
-
-- **Take photo** opens the camera (`UIImagePickerController` wrapped in `UIViewControllerRepresentable`, like the 07-PhotoPickBlender demo). **Choose** picks up to 5 photos from the library
-- Every photo gets the time and GPS location drawn onto it with `UIGraphicsImageRenderer`, so whoever receives it sees them too. Library photos say "Added to SOS" instead of "Taken", because they might be older
-- Location comes from `CLLocationUpdate.liveUpdates()` and `CLServiceSession`, and only runs while the alert screen is open
-- **Send to [contact]** opens Messages (`MFMessageComposeViewController`) with your emergency contact filled in, the photos attached, and an Apple Maps link to your location. If the phone can't send texts, it shows the normal share sheet instead
-- Photos are saved with `.completeFileProtection` (encrypted while the phone is locked). They stay in a **Saved evidence** section in Safety kit after the alert ends, where you can share or delete them
-- This only collects photos during an actual emergency. My first idea was a lock screen wallpaper showing your medical info, made with Core Image filters (like the 07-Instafilter demo) and saved with `PHPhotoLibrary`. I built it, then removed it because it would show your name, health details and a contact's number to anyone who sees your phone, all the time
-
-Also cleaned up the file names: `MyApp.swift` is now just the `@main` file and `ContentView.swift` has the app's views (they were swapped in Week 6).
-
-**Concepts used:** `PhotosPicker` (single and multiple selection), `UIViewControllerRepresentable` with a Coordinator, `UIImagePickerController`, `MFMessageComposeViewController`, `ShareLink`, `UIGraphicsImageRenderer`, `CLLocationUpdate` / `CLServiceSession`, file protection, `.sheet` presentation, camera / location usage descriptions
+**Concepts used:** `PhotosPicker`, `UIViewControllerRepresentable` and Coordinators, `UIImagePickerController`, `MFMessageComposeViewController`, `ShareLink`, `UIGraphicsImageRenderer`, `CLLocationUpdate` / `CLServiceSession`, file protection, `.sheet`, `Circle().trim`
 
 **Issues/errors:**
-- In the lock screen version, darkening photos with `colorControls` brightness turned dark green areas completely black, because it subtracts the same amount from every color. `exposureAdjust` fixed it, because it darkens by a percentage instead.
-- `UIGraphicsImageRenderer` uses the screen's 3x scale by default, so a "1200 px" photo was really 3600 px and in a wide-color format, which made Core Image slow and the colors wrong. Setting `format.scale = 1` and `preferredRange = .standard` in my resize helper fixed it.
-- The dark bar behind the time/location stamp came out solid gray and erased the bottom of the photo. `context.fill(rect)` on a `UIGraphicsImageRenderer` uses the `.copy` blend mode by default, which replaces pixels instead of drawing over them. Passing `blendMode: .normal` fixed it.
-- The simulator's camera opens but can't actually take a picture, and the simulator can't send texts, so those two parts need to be tested on a real iPhone.
+- The dark bar behind the time and location stamp came out solid gray and erased the bottom of the photo. That's because `context.fill(rect)` uses the `.copy` blend mode by default, which replaces the pixels instead of drawing over them. I fixed it with `blendMode: .normal`.
+- `UIGraphicsImageRenderer` uses the screen's 3x scale by default, so a "1200 px" photo was really 3600 px and the colors came out wrong. I fixed it by setting `format.scale = 1` and `preferredRange = .standard`.
+- In the lock screen version, darkening the photo with `colorControls` brightness turned dark green areas completely black, because it subtracts the same amount from every color. `exposureAdjust` fixed it because it darkens by a percentage instead.
+- I first made Call 911 a big circle like the SOS button, but it looked like you had to hold it too. I changed it to a wide button, so the only circle is the SOS button you hold.
+- The simulator's camera can't actually take a picture and the simulator can't send texts, so I still need to test those on my iPhone.
 
-**Plans:** test the camera and texting on my iPhone, and maybe a Live Activity so the alert stays on the lock screen while it's active.
+**Plans:** test the camera and texting on my iPhone, and maybe add a Live Activity so the alert shows on the lock screen while it's active.
+
+**Time spent:** 12 hours
 
 ---
 ## Week 6
