@@ -157,17 +157,7 @@ struct LockScreenView: View {
             if let data = try? await pickedPhoto?.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
                 // Shrink big camera photos first so the filters stay fast.
-                // Redrawing also fixes photos that were taken sideways.
-                let width = min(image.size.width, 1200)
-                let size = CGSize(width: width, height: width * image.size.height / image.size.width)
-                // Scale 1 so the image is really 1200 pixels wide (not 3x that),
-                // and standard range so Core Image gets normal sRGB colors.
-                let format = UIGraphicsImageRendererFormat()
-                format.scale = 1
-                format.preferredRange = .standard
-                originalImage = UIGraphicsImageRenderer(size: size, format: format).image { _ in
-                    image.draw(in: CGRect(origin: .zero, size: size))
-                }
+                originalImage = resizedImage(image, maxWidth: 1200)
                 applyStyle()
             }
         }

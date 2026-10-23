@@ -9,20 +9,27 @@ struct EmergencyContact: Identifiable, Codable, Equatable {
     var name: String
     var phone: String
     var relationship: String
+    // The photo is its own JPEG file in Documents. contacts.json only keeps its name.
+    var photoFileName: String?
 
     var digits: String {
         phone.filter { $0.isNumber }
     }
 
-    init(id: UUID = UUID(), name: String, phone: String, relationship: String = "Emergency contact") {
+    var initials: String {
+        name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased()
+    }
+
+    init(id: UUID = UUID(), name: String, phone: String, relationship: String = "Emergency contact", photoFileName: String? = nil) {
         self.id = id
         self.name = name
         self.phone = phone
         self.relationship = relationship
+        self.photoFileName = photoFileName
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, phone, relationship
+        case id, name, phone, relationship, photoFileName
     }
 
     init(from decoder: Decoder) throws {
@@ -31,6 +38,7 @@ struct EmergencyContact: Identifiable, Codable, Equatable {
         name = try container.decode(String.self, forKey: .name)
         phone = try container.decode(String.self, forKey: .phone)
         relationship = try container.decodeIfPresent(String.self, forKey: .relationship) ?? "Emergency contact"
+        photoFileName = try container.decodeIfPresent(String.self, forKey: .photoFileName)
     }
 }
 
@@ -71,22 +79,48 @@ final class ContactStore {
         }
     }
 
-    func add(name: String, phone: String, relationship: String) {
+    func add(name: String, phone: String, relationship: String, photo: UIImage?) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedRelationship = relationship.trimmingCharacters(in: .whitespacesAndNewlines)
-        contacts.append(
-            EmergencyContact(
-                name: trimmedName,
-                phone: phone,
-                relationship: trimmedRelationship.isEmpty ? "Emergency contact" : trimmedRelationship
-            )
+        let contact = EmergencyContact(
+            name: trimmedName,
+            phone: phone,
+            relationship: trimmedRelationship.isEmpty ? "Emergency contact" : trimmedRelationship
         )
+        contacts.append(contact)
         save()
+        if let photo {
+            setPhoto(photo, for: contact.id)
+        }
+    }
+
+    func setPhoto(_ image: UIImage, for contactID: UUID) {
+        guard let index = contacts.firstIndex(where: { $0.id == contactID }),
+              let data = resizedImage(image, maxWidth: 300).jpegData(compressionQuality: 0.8) else { return }
+        // A new file name each time, so SwiftUI notices the change and redraws.
+        let newFileName = "contact-\(UUID().uuidString).jpg"
+        do {
+            try data.write(to: fileURL(newFileName), options: .atomic)
+            removePhoto(of: contacts[index])
+            contacts[index].photoFileName = newFileName
+            save()
+        } catch {
+            print("Photo save error:", error)
+        }
     }
 
     func delete(at offsets: IndexSet) {
+        for index in offsets {
+            removePhoto(of: contacts[index])
+        }
         contacts.remove(atOffsets: offsets)
         save()
+    }
+
+    private func removePhoto(of contact: EmergencyContact) {
+        if let photoFileName = contact.photoFileName {
+            try? FileManager.default.removeItem(at: fileURL(photoFileName))
+        }
     }
 
     func save() {
@@ -96,6 +130,7 @@ final class ContactStore {
 
 struct ContentView: View {
     @State private var store = ContactStore()
+    @State private var evidence = EvidenceStore()
 
     var body: some View {
         TabView {
@@ -110,6 +145,7 @@ struct ContentView: View {
         }
         .tint(.red)
         .environment(store)
+        .environment(evidence)
     }
 }
 
@@ -292,11 +328,16 @@ struct AlertScreen: View {
 
                 ForEach(contacts) { contact in
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(contact.name)
-                            .font(.headline)
-                        Text(contact.relationship)
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.7))
+                        HStack(spacing: 12) {
+                            ContactAvatar(contact: contact, size: 56)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(contact.name)
+                                    .font(.headline)
+                                Text(contact.relationship)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white.opacity(0.7))
+                            }
+                        }
                         HStack {
                             Link(destination: URL(string: "tel:\(contact.digits)")!) {
                                 EmergencyActionLabel(title: "Call", symbol: "phone.fill", tint: .white)
@@ -309,6 +350,8 @@ struct AlertScreen: View {
                     .padding()
                     .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
+
+                EvidenceCaptureSection(contacts: contacts, message: message)
 
                 MedicalDetails(bloodType: bloodType, allergies: allergies, medications: medications)
 
@@ -384,6 +427,7 @@ struct ProfileView: View {
                     } onDelete: { offsets in
                         store.delete(at: offsets)
                     }
+                    SavedEvidenceSection()
                     MedicalSection(
                         bloodType: $bloodType,
                         allergies: $allergies,
@@ -396,8 +440,8 @@ struct ProfileView: View {
             .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("Safety kit")
             .sheet(isPresented: $isShowingContactSheet) {
-                AddContactView { name, phone, relationship in
-                    store.add(name: name, phone: phone, relationship: relationship)
+                AddContactView { name, phone, relationship, photo in
+                    store.add(name: name, phone: phone, relationship: relationship, photo: photo)
                 }
             }
             .onChange(of: pickedPhoto) {
@@ -414,11 +458,7 @@ struct ProfileView: View {
         Task {
             if let data = try? await pickedPhoto?.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
-                let size = CGSize(width: 300, height: 300 * image.size.height / image.size.width)
-                let resized = UIGraphicsImageRenderer(size: size).image { _ in
-                    image.draw(in: CGRect(origin: .zero, size: size))
-                }
-                photoData = resized.jpegData(compressionQuality: 0.8) ?? Data()
+                photoData = resizedImage(image, maxWidth: 300).jpegData(compressionQuality: 0.8) ?? Data()
             }
         }
     }
@@ -545,14 +585,35 @@ struct ContactsSection: View {
 }
 
 struct ContactRow: View {
+    @Environment(ContactStore.self) private var store
     let contact: EmergencyContact
+
+    @State private var pickedPhoto: PhotosPickerItem?
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "person.fill")
-                .foregroundStyle(.teal)
-                .frame(width: 34, height: 34)
-                .background(.teal.opacity(0.12), in: Circle())
+            // Tap the circle to add or change this person's photo.
+            PhotosPicker(selection: $pickedPhoto, matching: .images) {
+                ContactAvatar(contact: contact, size: 44)
+                    .overlay(alignment: .bottomTrailing) {
+                        if contact.photoFileName == nil {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(4)
+                                .background(.teal, in: Circle())
+                        }
+                    }
+            }
+            .accessibilityLabel("Change photo for \(contact.name)")
+            .onChange(of: pickedPhoto) {
+                Task {
+                    if let data = try? await pickedPhoto?.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        store.setPhoto(image, for: contact.id)
+                    }
+                }
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(contact.name)
                     .font(.headline)
@@ -595,10 +656,12 @@ struct MedicalSection: View {
 struct AddContactView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let onSave: (String, String, String) -> Void
+    let onSave: (String, String, String, UIImage?) -> Void
     @State private var name = ""
     @State private var phone = ""
     @State private var relationship = ""
+    @State private var pickedPhoto: PhotosPickerItem?
+    @State private var photo: UIImage?
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
@@ -610,9 +673,25 @@ struct AddContactView: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                        .font(.system(size: 46))
-                        .foregroundStyle(.teal)
+                    PhotosPicker(selection: $pickedPhoto, matching: .images) {
+                        Group {
+                            if let photo {
+                                Image(uiImage: photo)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                Image(systemName: "person.crop.circle.badge.plus")
+                                    .font(.system(size: 46))
+                                    .foregroundStyle(.teal)
+                            }
+                        }
+                        .frame(width: 64, height: 64)
+                        .clipShape(Circle())
+                    }
+                    .accessibilityLabel("Add a photo")
+                    Text(photo == nil ? "Tap to add their photo, so you can spot them fast." : "Looking good.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     Text("Add to your safety circle")
                         .font(.title2.bold())
                     Text("Each detail helps you reach the right person faster.")
@@ -633,7 +712,7 @@ struct AddContactView: View {
                 Spacer()
 
                 Button {
-                    onSave(name, phone, relationship)
+                    onSave(name, phone, relationship, photo)
                     dismiss()
                 } label: {
                     Label("Add contact", systemImage: "checkmark.circle.fill")
@@ -648,6 +727,13 @@ struct AddContactView: View {
             .padding(24)
             .navigationTitle("New contact")
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: pickedPhoto) {
+                Task {
+                    if let data = try? await pickedPhoto?.loadTransferable(type: Data.self) {
+                        photo = UIImage(data: data)
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
