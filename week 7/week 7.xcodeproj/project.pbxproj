@@ -259,7 +259,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos of what is happening during an SOS alert.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Stamp SOS photos with where they were taken, and share your location with your emergency contacts.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your Medical ID lock screen wallpaper to Photos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -301,7 +300,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos of what is happening during an SOS alert.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Stamp SOS photos with where they were taken, and share your location with your emergency contacts.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your Medical ID lock screen wallpaper to Photos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

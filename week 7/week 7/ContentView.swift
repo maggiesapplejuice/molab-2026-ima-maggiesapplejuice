@@ -143,9 +143,6 @@ struct ContentView: View {
 
             ProfileView()
                 .tabItem { Label("Safety kit", systemImage: "person.crop.circle.fill") }
-
-            LockScreenView()
-                .tabItem { Label("Lock screen", systemImage: "lock.iphone") }
         }
         .tint(.red)
         .environment(store)
