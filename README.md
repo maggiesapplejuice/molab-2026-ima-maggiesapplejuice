@@ -8,6 +8,27 @@
   - [yes] installed Xcode 27
   - [yes] watched at least one WWDC video
 ---
+## Week 7
+
+### Part 2: Homework
+**`week 7/week 7/LockScreenView.swift`**: added a new **Lock screen** tab to my SOS app that turns one of your photos into a Medical ID lock screen wallpaper.
+
+- Pick a background photo from your library with `PhotosPicker`
+- Choose a style made with Core Image filters, like the 07-Instafilter demo: **Calm** (blur), **Noir** (black and white), **Night** (dark blue tint) and **Vivid** (vibrance + vignette). Each one darkens the photo a bit so the white text stays easy to read
+- Your name, blood type, allergies, medications and first emergency contact (from the Safety kit tab) are shown on top of the photo, placed between the lock screen clock and the flashlight/camera buttons
+- "Save to Photos" uses `ImageRenderer` to turn the SwiftUI view into a full-resolution image, then saves it with `PHPhotoLibrary`. It asks for **add-only** access, so the app can save photos but can never see your library
+- Then you set it as your wallpaper from the Photos app. Now a first responder can see your medical info without unlocking your phone
+- Also cleaned up the file names: `MyApp.swift` is now just the `@main` file and `ContentView.swift` has the app's views (they were swapped in Week 6)
+
+**Concepts used:** `PhotosPicker`, `CIFilter` / `CoreImage.CIFilterBuiltins`, `CIContext`, `ImageRenderer`, `PHPhotoLibrary` add-only permission, `NSPhotoLibraryAddUsageDescription`
+
+**Issues/errors:**
+- My first try at darkening the photo used `colorControls` brightness. It subtracts the same amount from every color, so dark green cliffs turned completely black and the colors looked wrong. Switching to `exposureAdjust` fixed it, because exposure darkens by a percentage instead.
+- `UIGraphicsImageRenderer` uses the screen's 3x scale by default, so my "1200 px" photo was really 3600 px and in a wide-color format. Setting `format.scale = 1` and `preferredRange = .standard` made the filters faster and the colors correct.
+
+**Plans:** add photos to each emergency contact so you can recognize them faster on the alert screen.
+
+---
 ## Week 6
 
 ### Part 1: 100 Days of SwiftUI (Days 36–42)
