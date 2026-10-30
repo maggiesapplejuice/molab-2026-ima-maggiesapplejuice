@@ -7,14 +7,14 @@
   - [yes] able to build and run example apps own iPhone
   - [yes] installed Xcode 27
   - [yes] watched at least one WWDC video
-  - [ ] uploaded profile photo to HOS-Lobby app
+  - [yes] uploaded profile photo to HOS-Lobby app
 ---
 ## Week 8
 
-### Part 1: Studying Swift/SwiftUI
+### Part 1: 100 Days of SwiftUI (Days 50–56)
 - **Resource:** https://www.hackingwithswift.com/100/swiftui
-- **Topics:** [fill in the days/topics you did this week]
-- **Time spent:** [fill in] hours
+- **Topics:** Cupcake Corner (`Codable`, `URLSession` networking, haptics) and Bookworm (SwiftData)
+- **Time spent:** 9 hours
 - Past assignments: Weeks 1–7 all have folders in this repo already.
 
 ### Part 2: Homework (video manipulation app)
@@ -49,11 +49,9 @@ I added evidence videos to my SOS app. My twist on the 08-CameraRecorder demo is
 
 **Plans:** test the live camera, microphone, night boost and texting a video on my iPhone, since the simulator can't record. Maybe add a Live Activity so the alert shows on the lock screen.
 
-**Final project research:** [fill in your notes so far]
+**Final project research:** I want to keep building this SOS safety app for my final project. Next I'm looking into a Live Activity so the alert shows on the lock screen, testing the camera and texting on my iPhone, and watching WWDC videos about AVFoundation for the video part.
 
-**Questions:** [fill in]
-
-**Time spent:** [fill in] hours
+**Time spent:** 9 hours
 
 ---
 ## Week 7
@@ -212,7 +210,7 @@ I added evidence videos to my SOS app. My twist on the 08-CameraRecorder demo is
 ### Part 2: Text art playground
 **`Week02/week2.playground`**: apple ASCII art using variables, loops, and string manipulation.
 
-**Project link:** [your github link to week2.playground]
+**Project link:** https://github.com/maggiesapplejuice/molab-2026-ima-maggiesapplejuice/tree/main/week2.playground
 
 **Issues/errors:** No major issues, mostly the normal learning curve of getting comfortable with newer Swift concepts like classes and protocols.
 
