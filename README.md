@@ -7,6 +7,54 @@
   - [yes] able to build and run example apps own iPhone
   - [yes] installed Xcode 27
   - [yes] watched at least one WWDC video
+  - [ ] uploaded profile photo to HOS-Lobby app
+---
+## Week 8
+
+### Part 1: Studying Swift/SwiftUI
+- **Resource:** https://www.hackingwithswift.com/100/swiftui
+- **Topics:** [fill in the days/topics you did this week]
+- **Time spent:** [fill in] hours
+- Past assignments: Weeks 1–7 all have folders in this repo already.
+
+### Part 2: Homework (video manipulation app)
+**Project:** [`week 8/`](./week%208): `VideoEvidence.swift` (new), `Evidence.swift`
+
+I added evidence videos to my SOS app. My twist on the 08-CameraRecorder demo is that the "filter" isn't a look. It writes the time and GPS location onto every frame, so the video itself shows when and where it was filmed.
+
+- **Record video:** the alert screen now has Photo, Video and Choose. Video opens a full screen camera (the back camera, since you want to film what's happening, not your face).
+- Like 08-CameraRecorder, every camera frame goes through Core Image before it's shown and recorded (`AVCaptureVideoDataOutput` → `CIImage` → `AVAssetWriter`). The preview shows the processed frame, so what you see is exactly what gets saved.
+- **Time and location stamp on every frame:** the same see-through black bar from my Week 7 photos, but drawn onto the video. The time updates every second while recording.
+- To reuse the bar, I moved it into its own `stampBar` function. Photos draw it once, and videos turn it into a `CIImage` and put it on top of each frame with `composited(over:)`.
+- Making the bar image is slow, and the text only changes once a second, so I keep the last one and reuse it for the ~30 frames in between (`StampCache`).
+- **Night boost:** the moon button brightens dark scenes with `exposureAdjust` and `noiseReduction`. I used exposure instead of brightness because of what I learned in Week 7: it multiplies, so dark areas don't turn gray or black.
+- **Sound:** records the microphone too (`AVCaptureAudioDataOutput`). If you say no to the microphone, it still records video without sound.
+- **One minute max** so the video is small enough to text. The timer at the top counts up to 1:00 and it stops on its own. The screen also won't auto-lock while you're recording.
+- **Closing the camera while recording still saves the video**, so evidence isn't lost by swiping the wrong way.
+- **Library videos:** Choose now lets you pick videos too. They get the same "Added to SOS" stamp on every frame using `AVVideoComposition` with a Core Image handler, then get exported at 720p. A spinner says "Stamping video…" while it works.
+- Videos are saved in Documents with the same `.completeFileProtection` as photos, and get a still-frame thumbnail with a ▶ and their length (like the Photos app).
+- **Watch evidence:** tap any photo or video (on the alert screen or in Safety kit → Saved evidence) to view it full size. Videos play with `VideoPlayer`.
+- The send button counts both now ("Send 1 photo and 1 video to Mom") and attaches the videos to the text.
+- I kept my Week 7 design rule: the record button is a wide rectangle, not a round shutter, because in this app circles are held (SOS) and rectangles are tapped.
+
+**Concepts used:** `AVCaptureSession`, `AVCaptureVideoDataOutput` / `AVCaptureAudioDataOutput`, `AVAssetWriter` and pixel buffer adaptors, `CIImage` compositing, Core Image filters (`exposureAdjust`, `noiseReduction`), `AVVideoComposition` with a Core Image handler, `AVAssetExportSession`, `AVAssetImageGenerator`, `Transferable` for picked videos, `VideoPlayer`, `nonisolated` and locks for background threads
+
+**Issues/errors:**
+- My project makes everything run on the main thread by default (`MainActor`), but camera frames arrive on a background thread about 30 times a second. I had to mark the recorder `nonisolated` and put the settings that both threads change (location, night boost) behind a lock.
+- `AVMutableVideoComposition` is deprecated in iOS 26. The new replacement (`AVVideoComposition(applyingFiltersTo:)`) only exists in iOS 27, and my app supports iOS 26, so I used `AVVideoComposition.videoComposition(with:applyingCIFiltersWithHandler:)` instead.
+- iPhone videos are often saved sideways with a "rotate me" flag. I made a test video like that to make sure the stamp still ends up on the bottom of the upright video, and it does.
+- For the camera, I turned the frames upright first (`videoRotationAngle = 90`), so the stamp goes along the bottom instead of up the side.
+- At first, closing the camera mid-recording could lose when the video started, because the screen was already gone when the file finished saving. Now the recorder remembers the start time itself.
+- The new simulator shows a camera, so the Photo and Video buttons appear, but recording fails (error -12782) and the screen just showed a spinner forever. Now it says "The camera couldn't start" so you know to use something else.
+
+**Plans:** test the live camera, microphone, night boost and texting a video on my iPhone, since the simulator can't record. Maybe add a Live Activity so the alert shows on the lock screen.
+
+**Final project research:** [fill in your notes so far]
+
+**Questions:** [fill in]
+
+**Time spent:** [fill in] hours
+
 ---
 ## Week 7
 
