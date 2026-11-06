@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Paste this into Firebase console > Firestore Database > Rules, then Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /alerts/{code} {
+      // Anyone signed in (anonymous is fine) can open ONE alert if they know its
+      // code. "get" only, no "list", so nobody can browse everyone's alerts.
+      allow get: if request.auth != null;
+
+      // Only the phone that holds SOS can start an alert, and only as itself.
+      allow create: if request.auth != null
+        && request.resource.data.ownerUID == request.auth.uid;
+
+      // The owner can update their alert (location, ended).
+      // Everyone else can only add or change their own entry in "responders".
+      allow update: if request.auth != null && (
+        resource.data.ownerUID == request.auth.uid
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responders'])
+          && request.resource.data.responders.diff(resource.data.responders).affectedKeys().hasOnly([request.auth.uid])
+        )
+      );
+    }
+  }
+}
