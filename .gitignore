@@ -1,2 +1,5 @@
 .DS_Store
 **/xcuserdata/
+
+# Firebase config stays on your Mac, not in the public repo
+GoogleService-Info.plist

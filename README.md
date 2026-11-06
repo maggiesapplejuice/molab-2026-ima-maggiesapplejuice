@@ -9,6 +9,72 @@
   - [yes] watched at least one WWDC video
   - [yes] uploaded profile photo to HOS-Lobby app
 ---
+## Week 9
+
+### Part 1: Final project proposal (first draft)
+
+**Working title:** SOS (a personal safety app)
+
+**The idea:** One big button you hold for 3 seconds when you feel unsafe. It gets you to the people who can help as fast as possible, and it keeps a record of what happened.
+
+**Who it's for:** People walking home alone at night, people on a first date, anyone who has ever held their keys between their fingers. And the friend or parent on the other end who wants to know "are you ok, where are you?"
+
+**What it does so far (Weeks 4–9):**
+- Hold SOS for 3 seconds, then call 911 or call/text my emergency contact in one tap
+- Safety kit: my name, photo, emergency contact, blood type, allergies, medications
+- Evidence: photos and videos stamped with the time and GPS location on every frame (Weeks 7–8)
+- **New this week:** Live alert. My contact can follow my location live on a map and tell me "I'm on my way" (Firebase)
+
+**What I want to add for the final:**
+1. **Lock screen Live Activity** so the alert (and "Mom is on the way") shows without opening the app
+2. **Push notifications** so my contact gets the alert in the app, not only as a text with a code
+3. **Check-in timer** ("walk me home"): if I don't tap "I'm safe" before the timer ends, SOS starts on its own
+4. **Upload evidence to Firebase Storage** so it's safe even if someone takes my phone
+5. **Test with real people** (friends on two phones) and fix what's confusing in a real emergency
+
+**Other concept I'm considering:** Make the follower side its own small app (or an Apple Watch app) just for the person who gets the alert. That way a parent doesn't need the whole SOS app.
+
+**Biggest risks / questions:**
+- Background location: right now sharing stops if the app is closed. Live Activities and "Always" location permission might fix this, but Apple is strict about it.
+- Privacy: location is only shared while the alert is open, and alerts can't be listed or searched, only opened with the code. Is a 6-letter code safe enough, or should only my saved contact be able to open it?
+- Should texts use a link instead of a code? A link would need a website or Universal Links.
+
+### Part 2: Homework (Firebase multi-user experience)
+**Project:** [`week 9/`](./week%209): `LiveAlert.swift` (new), `ContentView.swift`, `Evidence.swift`, `MyApp.swift`, [`firestore.rules`](./week%209/firestore.rules)
+
+My multi-user twist: instead of my SOS alert being a text that just sits there, the person I text can **follow my alert live in the app**, and I can see that they're coming.
+
+- **Live alert:** When SOS goes off, the app signs in anonymously and creates a Firestore document `alerts/{code}` with my name, message, status, and location. The code is 6 letters with no 0/O or 1/I/L, so you can't misread it if someone reads it out loud.
+- **The code goes in every text.** The Call/Text buttons and the evidence "Send" message now end with "Follow my live location in the SOS app: Follow tab, code K7Q2XM".
+- **Live location:** The alert screen keeps sending my location while it's open. To save battery and data, it only writes when I moved 15 m or 10 seconds passed.
+- **New Follow tab:** My contact types the code and sees a map with my SOS pin, how accurate it is, "Location from 12 seconds ago", and a Directions button that opens Apple Maps.
+- **They can answer:** "I'm on my way" or "I can't come". Opening the alert also marks it "saw your alert" automatically.
+- **I see it right away:** The alert screen listens to the same document (`addSnapshotListener`) and shows "Mom is on the way · 30 sec ago" with a success buzz, so I know without reading.
+- **Ending:** Swiping the alert away marks it "ended" and stops sending location. The follower's map turns gray and says ALERT ENDED.
+- **Each responder only writes their own entry** (`responders.<their uid>`), so two people answering at once don't overwrite each other.
+- **Security rules** ([`firestore.rules`](./week%209/firestore.rules)): you can only open an alert if you know the code (`get`, no `list`). Only the person who started it can move it or end it. Everyone else can only change their own answer.
+- The location code moved up from the evidence section to the alert screen, so the evidence stamps and the live alert share one `LocationFetcher`.
+- **Without Firebase the app still works.** If `GoogleService-Info.plist` is missing, the app skips Firebase instead of crashing, and the Live alert card says it's off. The plist is in `.gitignore` so my Firebase keys aren't in this public repo.
+
+**How to run it:**
+1. In Xcode, give the `week 9` target a real bundle ID (Signing & Capabilities). Make a Firebase project and add an iOS app with that same bundle ID. Download `GoogleService-Info.plist` and drag it into the `week 9/week 9` folder.
+2. In the Firebase console: Authentication → Sign-in method → turn on **Anonymous**.
+3. Firestore Database → Create database. Then Rules → paste [`firestore.rules`](./week%209/firestore.rules) → Publish.
+4. Run on two devices (or a phone and the simulator). Hold SOS on one. On the other, open the Follow tab and type the code.
+
+**Concepts used:** Firebase Auth (anonymous), Cloud Firestore (`setData`, `updateData` with dotted field paths, `FieldValue.serverTimestamp()`, `addSnapshotListener`), Firestore security rules (`diff().affectedKeys().hasOnly()`), Swift Package Manager, MapKit for SwiftUI (`Map`, `Annotation`, `MapCircle`, `UserAnnotation`), `MKMapItem.openInMaps`, `@Observable` models, `.task` / `.onChange` / `.onDisappear` lifecycle, `sensoryFeedback`
+
+**Issues/errors:**
+- `FirebaseApp.configure()` crashes if the plist is missing, and the plist can't go in a public repo. So the app checks for the file first and shows "Live alert is off" instead.
+- The Firebase package is big (gRPC, abseil, leveldb). The first build takes a few minutes.
+- `Text + Text` is deprecated in iOS 26, so "12 seconds ago" uses `Text("\(Text(date, style: .relative)) ago")` instead.
+- I tested the app without Firebase in the simulator: the new Follow tab and the Live alert card show up, and the Week 8 alert screen (Call 911, Photo/Video/Choose) is still there. **Still to test:** the real two-phone flow with my Firebase project.
+
+**Plans:** Test the two-phone flow with a friend. Then look into a Live Activity, so the alert and "on the way" show on the lock screen, and push notifications, so the contact doesn't need the code.
+
+**Time spent:** _(fill in)_
+
+---
 ## Week 8
 
 ### Part 1: 100 Days of SwiftUI (Days 50–56)
