@@ -68,7 +68,9 @@ My multi-user twist: instead of my SOS alert being a text that just sits there, 
 - `FirebaseApp.configure()` crashes if the plist is missing, and the plist can't go in a public repo. So the app checks for the file first and shows "Live alert is off" instead.
 - The Firebase package is big (gRPC, abseil, leveldb). The first build takes a few minutes.
 - `Text + Text` is deprecated in iOS 26, so "12 seconds ago" uses `Text("\(Text(date, style: .relative)) ago")` instead.
-- I tested the app without Firebase in the simulator: the new Follow tab and the Live alert card show up, and the Week 8 alert screen (Call 911, Photo/Video/Choose) is still there. **Still to test:** the real two-phone flow with my Firebase project.
+- First Live alert said "internal error": Authentication wasn't turned on in the Firebase console yet (`CONFIGURATION_NOT_FOUND`). Then "Missing or insufficient permissions": Firestore still had its default rules that block everything, until I published mine.
+- The code box scrambled letters when you typed fast ("Q5W74M" became "7Q5W"). I was rewriting the text on every change, which moved the cursor. Now the box keeps what you type, and the code gets cleaned up (uppercase, max 6) when you tap Follow.
+- **Tested with my Firebase project:** holding SOS made code `Q5W74M` and sent my location. A second signed-in user opened it and answered "on my way", and "Mom is on the way" showed up on the alert screen within seconds. The security rules blocked that second user from changing my location. After I ended the alert, the Follow tab showed the map with ALERT ENDED. Still to try: two real phones.
 
 **Plans:** Test the two-phone flow with a friend. Then look into a Live Activity, so the alert and "on the way" show on the lock screen, and push notifications, so the contact doesn't need the code.
 
