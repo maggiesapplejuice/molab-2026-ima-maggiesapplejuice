@@ -417,10 +417,8 @@ struct FollowView: View {
                 .focused($codeFocused)
                 .padding(.vertical, 12)
                 .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .onChange(of: typedCode) {
-                    let cleaned = cleanedCode(typedCode)
-                    if cleaned != typedCode { typedCode = cleaned }
-                }
+                // Don't rewrite the text while typing (that moves the cursor and
+                // scrambles the code). It gets cleaned up when you tap Follow.
                 .onSubmit(follow)
             Button(action: follow) {
                 Group {
@@ -434,9 +432,9 @@ struct FollowView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .foregroundStyle(.white)
-                .background(typedCode.count == 6 ? Color.red : Color.gray, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(cleanedCode(typedCode).count == 6 ? Color.red : Color.gray, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .disabled(typedCode.count != 6 || follower.isLoading)
+            .disabled(cleanedCode(typedCode).count != 6 || follower.isLoading)
 
             if follower.notFound {
                 Text("No alert with code \(follower.code). Check the letters in the text.")
@@ -447,7 +445,7 @@ struct FollowView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
-            if !lastCode.isEmpty && lastCode != typedCode {
+            if !lastCode.isEmpty && lastCode != cleanedCode(typedCode) {
                 Button("Open last alert (\(lastCode))") {
                     typedCode = lastCode
                     follow()
