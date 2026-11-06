@@ -72,7 +72,7 @@ My multi-user twist: instead of my SOS alert being a text that just sits there, 
 
 **Plans:** Test the two-phone flow with a friend. Then look into a Live Activity, so the alert and "on the way" show on the lock screen, and push notifications, so the contact doesn't need the code.
 
-**Time spent:** _(fill in)_
+**Time spent:** 10 hours
 
 ---
 ## Week 8
