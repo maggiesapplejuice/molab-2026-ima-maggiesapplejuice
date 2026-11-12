@@ -64,7 +64,7 @@
 - **Code vs link in the text:** a tappable link is easier for a parent, but needs Universal Links and a website.
 
 ### Feedback from my pair
-- Partner:
+- Partner: Siksaka
 - What they liked:
 - What was confusing:
 - What I'm changing:
