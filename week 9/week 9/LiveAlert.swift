@@ -475,6 +475,11 @@ struct FollowView: View {
                         }
                         UserAnnotation()
                     }
+                    // Start zoomed to a few blocks around them, so you can see the
+                    // streets nearby instead of just the roof of one building.
+                    .onAppear {
+                        camera = .region(MKCoordinateRegion(center: coordinate, latitudinalMeters: 700, longitudinalMeters: 700))
+                    }
                 } else {
                     ContentUnavailableView("Waiting for location…", systemImage: "location.slash")
                         .background(Color(uiColor: .secondarySystemBackground))

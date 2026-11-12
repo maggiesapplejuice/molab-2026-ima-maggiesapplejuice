@@ -56,6 +56,14 @@ My multi-user twist: instead of my SOS alert being a text that just sits there, 
 - The location code moved up from the evidence section to the alert screen, so the evidence stamps and the live alert share one `LocationFetcher`.
 - **Without Firebase the app still works.** If `GoogleService-Info.plist` is missing, the app skips Firebase instead of crashing, and the Live alert card says it's off. The plist is in `.gitignore` so my Firebase keys aren't in this public repo.
 
+**Screenshots:**
+
+| Hold SOS | Live alert + code | Contact answers |
+|---|---|---|
+| <img src="week%209/screenshots/1-home.png" width="200"> | <img src="week%209/screenshots/2-live-alert-code.png" width="200"> | <img src="week%209/screenshots/3-mom-on-the-way.png" width="200"> |
+| **Contact types the code** | **Live map** | **"I'm on my way"** |
+| <img src="week%209/screenshots/4-enter-code.png" width="200"> | <img src="week%209/screenshots/5-follow-live-map.png" width="200"> | <img src="week%209/screenshots/6-on-my-way.png" width="200"> |
+
 **How to run it:**
 1. In Xcode, give the `week 9` target a real bundle ID (Signing & Capabilities). Make a Firebase project and add an iOS app with that same bundle ID. Download `GoogleService-Info.plist` and drag it into the `week 9/week 9` folder.
 2. In the Firebase console: Authentication → Sign-in method → turn on **Anonymous**.
