@@ -42,7 +42,6 @@ I'm changing my final project. SOS (Weeks 4–10) stays in this repo as my homew
 
 ### Problems
 
-- **Push notifications and Live Activities need a paid Apple developer account** (APNs key). Without it, pushes only show in the Simulator.
 - **MTA live data is messy:** trains disappear from the feed, transfers can be tight, and underground there's no signal to get the update.
 - **Google Calendar sign-in** needs Google to approve the app before people outside my test list can use it.
 - The server has to be running for alerts to work. If the VM goes down, nobody gets told to leave.
