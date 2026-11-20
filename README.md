@@ -9,6 +9,54 @@
   - [yes] watched at least one WWDC video
   - [yes] uploaded profile photo to HOS-Lobby app
 ---
+## Week 11
+
+### Pivot: from SOS to Chud (a subway leave-time app)
+
+I'm changing my final project. SOS (Weeks 4–10) stays in this repo as my homework, but my final is now **Chud**, an app that tells you the exact second to walk out the door to catch your train.
+
+**Why I switched:** I take the subway every day. I leave too early and wait on the platform, or leave too late and watch the doors close. SOS is something I hope nobody needs, so it's hard to test with real people. Chud I can test on myself every morning, and so can my friends.
+
+### How I'm tracking it
+
+- **New repo:** [maggiesapplejuice/chud](https://github.com/maggiesapplejuice/chud) (private; jht9629-nyu is added as a collaborator). It's a new repo instead of a homework folder because it has two parts, the SwiftUI app and a Python server, and it already had its own commit history.
+- Each week I'll add a section here with progress, problems, plans, and questions, and link to the commits from that week.
+
+### What Chud does
+
+1. **Reads your calendar** (Google Calendar or the iPhone calendar). Every event with an address becomes a trip.
+2. **Finds the subway routes** between home and the event, including transfers (e.g. L at 1 Av → Union Sq → 4/5/6).
+3. **Watches the MTA's live train times** every 10 seconds, picks the latest train that still gets you there on time, and counts back your walk to the station.
+4. **Sends a Time Sensitive "Leave now" push** at that exact second. If the train gets earlier it says "Hurry", if it's cancelled it sends a new plan, and at the transfer it tells you which train to take.
+5. **Lock Screen Live Activity:** about 20 minutes before, the Lock Screen and Dynamic Island show a countdown.
+6. **Learns your walk:** after 5 trips, your real walking times replace the default guesses.
+
+### Progress
+
+- Working app + server ([commits](https://github.com/maggiesapplejuice/chud/commits/main)): onboarding, home address search, Today screen with the countdown, map of places, Lock Screen countdown.
+- Redesigned it as **Chud**: hand-drawn, graph-paper look with Permanent Marker and Patrick Hand fonts. Onboarding says "welcome to chudnation".
+- "I'm leaving" is now hard to tap by accident, and you can undo it.
+- The notification wording changes with the event (dinner vs. class vs. interview), using Claude with a keyword fallback if that's unavailable.
+- Server runs on a free Google Cloud VM. 13 backend tests pass.
+- Public homepage and privacy policy pages (needed for Google sign-in).
+
+### Problems
+
+- **Push notifications and Live Activities need a paid Apple developer account** (APNs key). Without it, pushes only show in the Simulator.
+- **MTA live data is messy:** trains disappear from the feed, transfers can be tight, and underground there's no signal to get the update.
+- **Google Calendar sign-in** needs Google to approve the app before people outside my test list can use it.
+- The server has to be running for alerts to work. If the VM goes down, nobody gets told to leave.
+
+### Plans
+
+| Week | Plan |
+|---|---|
+| 12 | Put it on my own phone and use it every day for a week. Write down every time it's wrong (too early, too late, wrong train). |
+| 13 | Give it to 2–3 friends who take the subway. Fix the walk-time guesses and the onboarding where they get stuck. |
+| 14 | Polish, record a demo of a real trip from push to platform, present. |
+
+---
+
 ## Week 9
 
 ### Part 1: Final project proposal (first draft)
